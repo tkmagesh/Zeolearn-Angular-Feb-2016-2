@@ -21,55 +21,89 @@
     String.prototype.toInt = function(){
         return parseInt(this,10);
     };
-        
+
     //State and Behaviour
-    // Model    
+    // Model
     function SalaryCalculator(){
-        this.basic = 0;
-        this.hra = 0;
-        this.da = 0;
-        this.tax = 0;
+        var _data = {
+            basic : 0,
+            hra : 0,
+            da : 0,
+            tax : 0,
+            salary : 0
+        };
+        this.get = function(attrName){
+            return _data[attrName];
+        };
+        this.set = function(attrName, value){
+            if (_data[attrName] === value) return;
+            _data[attrName] = value;
+            //trigger change notification for 'attrName'
+            var eventHandlerFn = _eventHandlers[attrName];
+            if (typeof eventHandlerFn === 'function')
+                eventHandlerFn();
+        };
 
-        this.salary = 0;
+        var _eventHandlers = {
+            basic : null,
+            hra : null,
+            da : null,
+            tax : null,
+            salary : null
+        };
 
-        this.onSalaryChange = null;
-    } 
+        this.onChange = function(attrName, callbackFn){
+            _eventHandlers[attrName] = callbackFn;
+        };
+    }
     SalaryCalculator.prototype.calculate = function(){
-        var subtotal = this.basic + this.hra + this.da;
-        var salary = subtotal * ((100-this.tax)/100);
-        this.salary = salary;
-        if (typeof this.onSalaryChange === 'function'){
-            this.onSalaryChange();
-        }
-    }    
-    
+        var subtotal = this.get('basic') + this.get('hra') + this.get('da');
+        var salary = subtotal * ((100-this.get('tax'))/100);
+        this.set('salary', salary);
+    }
+
     //View
     $(document).ready(function(){
         window.calculator = new SalaryCalculator();
+
+        //React to user actions
         $("#txtBasic").change(function(){
-            calculator.basic = $("#txtBasic").val().toInt();
+            calculator.set('basic', $("#txtBasic").val().toInt());
         });
         $("#txtHra").change(function(){
-            calculator.hra = $("#txtHra").val().toInt();
+            calculator.set('hra', $("#txtHra").val().toInt());
         });
         $("#txtDa").change(function(){
-            calculator.da = $("#txtDa").val().toInt();
+            calculator.set('da', $("#txtDa").val().toInt());
         });
         $("#rangeTax").change(function(){
-            calculator.tax = $("#rangeTax").val().toInt();
+            calculator.set('tax', $("#rangeTax").val().toInt());
         });
 
         $("#btnCalculate").click(function(){
             calculator.calculate();
         });
-        
+
         $("#rangeTax").change(function(){
             $("#spanTax").html(this.value);
         });
 
-        calculator.onSalaryChange = function(){
-            $("#divResult").html(calculator.salary);
-        }
+        //React to model changes
+        calculator.onChange('basic', function(){
+            $("#txtBasic").val(calculator.get('basic'));
+        });
+        calculator.onChange('hra', function(){
+            $("#txtHra").val(calculator.get('hra'));
+        });
+        calculator.onChange('da', function(){
+            $("#txtDa").val(calculator.get('da'));
+        });
+        calculator.onChange('tax', function(){
+            $("#rangeTax").val(calculator.get('tax'));
+        });
+        calculator.onChange('salary', function(){
+            $("#divResult").html(calculator.get('salary'));
+        });
     });
     </script>
 </head>
@@ -87,7 +121,7 @@
         </div>
         <div class="field">
             <input type="button" value="Calculate" id="btnCalculate">
-           
+
         </div>
          <div class="field">
                 <div id="divResult">[Salary]</div>

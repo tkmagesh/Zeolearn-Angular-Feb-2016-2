@@ -21,11 +21,28 @@
     String.prototype.toInt = function(){
         return parseInt(this,10);
     };
-        
+
     //State and Behaviour
-    // Model    
+    // Model
     function SalaryCalculator(){
-        this.basic = 0;
+        //this.basic = 0;
+
+        var _basic = 0;
+
+        this.onBasicChange = null;
+
+        this.getBasic = function(){
+            return _basic;
+        };
+        this.setBasic = function(value){
+            if (_basic === value) return;
+            _basic = value;
+            //trigger change notification for 'basic'
+            if (typeof this.onBasicChange === 'function'){
+                this.onBasicChange();
+            }
+        };
+
         this.hra = 0;
         this.da = 0;
         this.tax = 0;
@@ -33,21 +50,21 @@
         this.salary = 0;
 
         this.onSalaryChange = null;
-    } 
+    }
     SalaryCalculator.prototype.calculate = function(){
-        var subtotal = this.basic + this.hra + this.da;
+        var subtotal = this.getBasic() + this.hra + this.da;
         var salary = subtotal * ((100-this.tax)/100);
         this.salary = salary;
         if (typeof this.onSalaryChange === 'function'){
             this.onSalaryChange();
         }
-    }    
-    
+    }
+
     //View
     $(document).ready(function(){
         window.calculator = new SalaryCalculator();
         $("#txtBasic").change(function(){
-            calculator.basic = $("#txtBasic").val().toInt();
+            calculator.setBasic( $("#txtBasic").val().toInt());
         });
         $("#txtHra").change(function(){
             calculator.hra = $("#txtHra").val().toInt();
@@ -62,14 +79,18 @@
         $("#btnCalculate").click(function(){
             calculator.calculate();
         });
-        
+
         $("#rangeTax").change(function(){
             $("#spanTax").html(this.value);
         });
 
+        calculator.onBasicChange = function(){
+            $("#txtBasic").val(calculator.getBasic());
+        };
+
         calculator.onSalaryChange = function(){
             $("#divResult").html(calculator.salary);
-        }
+        };
     });
     </script>
 </head>
@@ -87,7 +108,7 @@
         </div>
         <div class="field">
             <input type="button" value="Calculate" id="btnCalculate">
-           
+
         </div>
          <div class="field">
                 <div id="divResult">[Salary]</div>
